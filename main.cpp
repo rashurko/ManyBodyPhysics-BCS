@@ -1,4 +1,6 @@
 #include <iostream>
+#include <chrono>
+#include <fstream>
 
 #include "bcsSolver.hpp"
 #include "exactSolver.hpp"
@@ -28,36 +30,84 @@ int main() {
         whitespace();
 
         unsigned int N;
-        double g;
+        std::vector<double> gVals;
         std::cout << "N: ";
         std::cin >> N;
-        std::cout << "g: ";
-        std::cin >> g;
+        
+        char multiple;
+        bool save = false;
+        std::cout << "Compute for multiple g values? (y/n)";
+        std::cin >> multiple;
+        if (multiple == 'y') {
+            // g interval
+            double gMin;
+            double gMax;
+            double gStep;
+            std::cout << "min(g): ";
+            std::cin >> gMin;
+            std::cout << "max(g): ";
+            std::cin >> gMax;
+            std::cout << "step: ";
+            std::cin >> gStep;
+            for (unsigned int i = 0; i <= static_cast<unsigned int>((gMax - gMin)/gStep + 0.5); i++) {
+                gVals.push_back(gMin + static_cast<double>(i)*gStep);
+            }
+
+            // Save data
+            char saveData;
+            std::cout << "Save data? (y/n)";
+            std::cin >> saveData;
+            if (saveData == 'y') {
+                save = true;
+            }
+        } else {
+            double g;
+            std::cout << "g: ";
+            std::cin >> g;
+            gVals.push_back(g);
+        }
         whitespace();
 
-        bcsSolver solver(N, g);
-        ExactSolver exactSolver(N, g);
-        double E0;
-        switch (choice) {
-            case 1:
-                solver.solve(1e-6, 1e-6);
-                E0 = solver.showE0();
-                break;
-            
-            case 2:
-                exactSolver.solve();
-                E0 = exactSolver.showE0();
-                break;
-            default:
-                break;
+        std::ofstream outFile("data.txt");
+        outFile << "g E0 duration" << std::endl;
+        unsigned int count = 0;
+        for (auto g : gVals) {
+            count += 1;
+
+            auto timeStart = std::chrono::high_resolution_clock::now();
+            bcsSolver solver(N, g);
+            ExactSolver exactSolver(N, g);
+            double E0;
+            switch (choice) {
+                case 1:
+                    solver.solve(1e-6, 1e-6);
+                    E0 = solver.showE0();
+                    break;
+                
+                case 2:
+                    exactSolver.solve();
+                    E0 = exactSolver.showE0();
+                    break;
+                default:
+                    break;
+            }
+            auto timeEnd = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(timeEnd - timeStart);
+
+            if (solver.isConverged() || exactSolver.isSuccess()) {
+                whitespace();
+                std::cout << count <<"/" << gVals.size() << std::endl;
+                    if (save) {
+                        outFile << g << " " << E0 << " " << duration.count() << std::endl;
+                    } else {
+                        std::cout << "g=" << g << " " << "E0=" << E0 << " " << "duration=" << duration.count() << std::endl;
+                    }
+            } else {
+                std::cout << "Calculation not converged" << std::endl;
+            }
         }
 
-        if (solver.isConverged() || exactSolver.isSuccess()) {
-            std::cout << "E0 = " << E0 << std::endl;
-        } else {
-            std::cout << "Calculation not converged" << std::endl;
-        }
-
+        
         char temp;
         std::cout << "Press Enter to continue";
         std::cin.get(temp);

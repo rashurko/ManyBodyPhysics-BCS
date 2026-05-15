@@ -15,7 +15,9 @@ struct bcsSystem {
     std::vector<double> vAmplitudes; // N vector of amplitudes v with alpha = 1, ..., N
     std::vector<double> uAmplitudes; // N vector of amplitudes u with alpha = 1, ..., N
 
-    double E0;   // converged ground-state energy
+    double E0;       // converged ground-state energy
+    double E1p;      // single-particle hamiltonian contribution
+    double Epairing; // pairing contribution
 };
 
 
@@ -27,8 +29,10 @@ class bcsSolver {
 
         bool converged = false;
 
-        double getE0() const {
+        double getE0() {
             double E0 = 0.0;
+            double E1p = 0.0;
+            double Epairing = 0.0;
             double uvSum = 0.0;
             for (unsigned int j = 0; j < N; j++) {
                     double uj = system.uAmplitudes[j];
@@ -41,8 +45,11 @@ class bcsSolver {
                 double ui = system.uAmplitudes[i];
                 double vi = system.vAmplitudes[i];
                 E0 += (2*epsi - g*vi*vi)*vi*vi - g*ui*vi*uvSum;
+                E1p += 2*epsi*vi*vi;
             }
-
+            Epairing = E0 - E1p;
+            system.E1p = E1p;
+            system.Epairing = Epairing;
             return E0;
         }
 
@@ -122,6 +129,14 @@ class bcsSolver {
 
         double showE0() const {
             return system.E0;
+        }
+
+        double showE1p() const {
+            return system.E1p;
+        }
+
+        double showEpairing() const {
+            return system.Epairing;
         }
 
         bool isConverged() const {
