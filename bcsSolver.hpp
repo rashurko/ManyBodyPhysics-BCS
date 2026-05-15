@@ -120,6 +120,14 @@ class bcsSolver {
             system.E0 = getE0();
         }
 
+        double showE0() const {
+            return system.E0;
+        }
+
+        bool isConverged() const {
+            return converged;
+        }
+
         void solve(double bisectionThreshold, double energyThreshold) {
             unsigned int nIterations = 0;
             while (true) {
@@ -156,7 +164,6 @@ class bcsSolver {
                 if (std::abs(newE0 - system.E0) < energyThreshold) {
                     system.E0 = newE0;
                     converged = true;
-                    std::cout << newE0 << std::endl;
                     break;
                 } else if (nIterations > 1e6) {
                     std::cerr << "Convergence not reached after 1e6 steps. " << newE0 << " " << system.E0 << std::endl;
