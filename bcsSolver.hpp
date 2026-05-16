@@ -13,9 +13,6 @@ struct bcsSystem {
     double g;                            // pairing term
     std::vector<unsigned int> epsAlphas; // N vector of one-particle energy levels
 
-    // Basis vectors
-    std::vector<std::vector<unsigned int>> basis;
-
     // Amplitudes
     std::vector<double> vAmplitudes; // N vector of amplitudes v with alpha = 1, ..., N
     std::vector<double> uAmplitudes; // N vector of amplitudes u with alpha = 1, ..., N
@@ -35,22 +32,6 @@ class bcsSolver {
         double g;
 
         bool converged = false;
-
-        void generateBasis(unsigned int start, std::vector<unsigned int> &current) {
-            // If vector has already max number of pairs
-            if (current.size() == N/2) {
-                system.basis.push_back(current);
-                return;
-            }
-
-            for (unsigned int i = start; i < N; i++) {
-                current.push_back(i);
-
-                generateBasis(i+1, current);
-
-                current.pop_back();
-            }
-        }
 
         double getE0() {
             double E0 = 0.0;
@@ -145,10 +126,6 @@ class bcsSolver {
                 system.vAmplitudes.push_back(sqrt(0.5));
                 system.uAmplitudes.push_back(sqrt(0.5));
             }
-
-            // Declare the basis vectors
-            std::vector<unsigned int> current;
-            generateBasis(0, current);
 
             // Calculate the initial ground-state energy
             system.E0 = getE0();
