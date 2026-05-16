@@ -86,7 +86,6 @@ def plotOccupationHistogram(dataList, labels, colors, title, name="default.png")
     ax.set_ylabel(r"$g$")
     ax.set_zlabel(r"$\rho _\alpha$")
     ax.set_title(title)
-    plt.legend()
     plt.savefig(name)
     plt.close()
 
@@ -112,7 +111,6 @@ def plotDiffOccupationHistogram(dataList, title, name="default.png"):
     ax.set_title(title)
     # Set pov
     ax.view_init(elev=15, azim=-15)
-    plt.legend()
     plt.savefig(name)
     plt.close()
 
