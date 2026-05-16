@@ -26,11 +26,17 @@ struct ExactSystem {
 
     // Basis vectors
     std::vector<std::vector<unsigned int>> basis;
+    std::vector<unsigned int> pairSingleParticleEnergies;
     // Hamiltonian matrix
     unsigned int dimH;
     Eigen::MatrixXd H;
+    Eigen::VectorXd eigenvector;
 
-    double E0;   // ground-state energy
+    double E0;       // ground-state energy
+    double Ep1;      // single-particle hamiltonian contribution
+    double Epairing; // pairing contribution
+
+    std::vector<double> occupationNumbers;
 };
 
 class ExactSolver {
@@ -103,6 +109,7 @@ class ExactSolver {
                         for (unsigned int k = 0; k < N/2; k++) {
                             energiesSum += system.epsAlphas[vec1[k]];
                         }
+                        system.pairSingleParticleEnergies.push_back(2*energiesSum);
                         system.H(i,j) = 2*static_cast<double>(energiesSum) - g*(static_cast<double>(N/2));
                     } else if (connected(vec1, vec2)) {
                         system.H(i,j) = -g;
@@ -122,14 +129,48 @@ class ExactSolver {
             }
 
             system.E0 = solver.eigenvalues()(0);
+
+            Eigen::VectorXd eigenvector = solver.eigenvectors().col(0);
+            system.eigenvector = eigenvector;
+            // Individual contributions
+            system.Ep1 = 0.0;
+            for (unsigned int i = 0; i < system.dimH; i++) {
+                system.Ep1 += static_cast<double>(system.pairSingleParticleEnergies[i]) * eigenvector(i) * eigenvector(i);
+            }
+            system.Epairing = system.E0 - system.Ep1;
         }
 
-        bool isSuccess() const {
-            return success;
+        void getOccupationNumbers() {
+            system.occupationNumbers.clear();
+            for (unsigned int i = 0; i < N; i++) {
+                double occupation = 0.0;
+                for (unsigned int j = 0; j < system.dimH; j++) {
+                    if (std::find(system.basis[j].begin(), system.basis[j].end(), i) != system.basis[j].end()) {
+                        occupation += pow(system.eigenvector(j), 2.0);
+                    }
+                }
+                system.occupationNumbers.push_back(occupation);
+            }
         }
 
         double showE0() const {
             return system.E0;
+        }
+
+        double showEp1() const {
+            return system.Ep1;
+        }
+
+        double showEpairing() const {
+            return system.Epairing;
+        }
+
+        std::vector<double> showOccupationNumbers() const {
+            return system.occupationNumbers;
+        }
+
+         bool isSuccess() const {
+            return success;
         }
 };
 

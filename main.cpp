@@ -69,7 +69,9 @@ int main() {
         whitespace();
 
         std::ofstream outFile("data.txt");
-        outFile << "g E0 duration" << std::endl;
+        std::ofstream outFileOccupation("occupation.txt");
+        outFile << "g E0 Ep1 Epair duration" << std::endl;
+        outFileOccupation << "g occupationNumbers" << std::endl;
         unsigned int count = 0;
         for (auto g : gVals) {
             count += 1;
@@ -78,15 +80,26 @@ int main() {
             bcsSolver solver(N, g);
             ExactSolver exactSolver(N, g);
             double E0;
+            double Ep1;
+            double Epair;
+            std::vector<double> occupationNumbers;
             switch (choice) {
                 case 1:
                     solver.solve(1e-6, 1e-6);
                     E0 = solver.showE0();
+                    Ep1 = solver.showE1p();
+                    Epair = solver.showEpairing();
+                    solver.getOccupationNumbers();
+                    occupationNumbers = solver.showOccupationNumbers();
                     break;
                 
                 case 2:
                     exactSolver.solve();
                     E0 = exactSolver.showE0();
+                    Ep1 = exactSolver.showEp1();
+                    Epair = exactSolver.showEpairing();
+                    exactSolver.getOccupationNumbers();
+                    occupationNumbers = exactSolver.showOccupationNumbers();
                     break;
                 default:
                     break;
@@ -98,16 +111,24 @@ int main() {
                 whitespace();
                 std::cout << count <<"/" << gVals.size() << std::endl;
                     if (save) {
-                        outFile << g << " " << E0 << " " << duration.count() << std::endl;
+                        outFile << g << " " << E0 << " " << Ep1 << " " << Epair << " " << duration.count() << std::endl;
+                        outFileOccupation << g << " ";
+                        for (auto occ : occupationNumbers) {
+                            outFileOccupation << occ << " ";
+                        }
+                        outFileOccupation << std::endl;
                     } else {
-                        std::cout << "g=" << g << " " << "E0=" << E0 << " " << "duration=" << duration.count() << std::endl;
+                        std::cout << "g=" << g << " " << "E0=" << E0 << " " << "Ep1=" << Ep1 << " " << "Epair=" << Epair << " " << "duration=" << duration.count() << std::endl;
+                        for (auto occ : occupationNumbers) {
+                            std::cout << occ << " ";
+                        }
+                        std::cout << std::endl;
                     }
             } else {
                 std::cout << "Calculation not converged" << std::endl;
             }
         }
 
-        
         char temp;
         std::cout << "Press Enter to continue";
         std::cin.get(temp);

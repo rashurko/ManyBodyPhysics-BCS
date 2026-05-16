@@ -5,11 +5,16 @@
 #include <cmath>
 #include <iostream>
 
+#include "exactSolver.hpp"
+
 struct bcsSystem {
     // Constants
     unsigned int N;                      // number of particles = number of one-particle energy levels (half-filling)
     double g;                            // pairing term
     std::vector<unsigned int> epsAlphas; // N vector of one-particle energy levels
+
+    // Basis vectors
+    std::vector<std::vector<unsigned int>> basis;
 
     // Amplitudes
     std::vector<double> vAmplitudes; // N vector of amplitudes v with alpha = 1, ..., N
@@ -18,6 +23,8 @@ struct bcsSystem {
     double E0;       // converged ground-state energy
     double E1p;      // single-particle hamiltonian contribution
     double Epairing; // pairing contribution
+
+    std::vector<double> occupationNumbers;
 };
 
 
@@ -28,6 +35,22 @@ class bcsSolver {
         double g;
 
         bool converged = false;
+
+        void generateBasis(unsigned int start, std::vector<unsigned int> &current) {
+            // If vector has already max number of pairs
+            if (current.size() == N/2) {
+                system.basis.push_back(current);
+                return;
+            }
+
+            for (unsigned int i = start; i < N; i++) {
+                current.push_back(i);
+
+                generateBasis(i+1, current);
+
+                current.pop_back();
+            }
+        }
 
         double getE0() {
             double E0 = 0.0;
@@ -123,24 +146,12 @@ class bcsSolver {
                 system.uAmplitudes.push_back(sqrt(0.5));
             }
 
+            // Declare the basis vectors
+            std::vector<unsigned int> current;
+            generateBasis(0, current);
+
             // Calculate the initial ground-state energy
             system.E0 = getE0();
-        }
-
-        double showE0() const {
-            return system.E0;
-        }
-
-        double showE1p() const {
-            return system.E1p;
-        }
-
-        double showEpairing() const {
-            return system.Epairing;
-        }
-
-        bool isConverged() const {
-            return converged;
         }
 
         void solve(double bisectionThreshold, double energyThreshold) {
@@ -191,6 +202,36 @@ class bcsSolver {
                 nIterations += 1;
             }
         }
+
+        void getOccupationNumbers() {
+            system.occupationNumbers.clear();
+            for (unsigned int i = 0; i < N; i++) {
+                double occupation = pow(system.vAmplitudes[i], 2.0);
+                system.occupationNumbers.push_back(occupation);
+            }
+        }
+
+        double showE0() const {
+            return system.E0;
+        }
+
+        double showE1p() const {
+            return system.E1p;
+        }
+
+        double showEpairing() const {
+            return system.Epairing;
+        }
+
+        std::vector<double> showOccupationNumbers() const {
+            return system.occupationNumbers;
+        }
+
+        bool isConverged() const {
+            return converged;
+        }
+
+        
 };
 
 #endif
